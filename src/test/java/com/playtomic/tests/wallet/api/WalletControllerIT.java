@@ -32,7 +32,7 @@ public class WalletControllerIT {
     }
 
     @Test
-    void test_ok() {
+    void test_wallet_ok() {
     	ResponseEntity<Wallet> response = restTemplate.getForEntity("/wallet/" + WALLET.getId(), Wallet.class);
     	Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
     	Assertions.assertEquals(0, WALLET.getBalance().compareTo(response.getBody().getBalance()));

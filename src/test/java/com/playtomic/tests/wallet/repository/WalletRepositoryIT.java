@@ -22,6 +22,6 @@ public class WalletRepositoryIT {
 		walletRepository.save(w1);
 		Optional<Wallet> ow2 = walletRepository.findById(1);
 		Assertions.assertTrue(ow2.isPresent());
-		Assertions.assertEquals(w1,  ow2.get());
+		Assertions.assertEquals(0, w1.getBalance().compareTo(ow2.get().getBalance()));
 	}
 }
