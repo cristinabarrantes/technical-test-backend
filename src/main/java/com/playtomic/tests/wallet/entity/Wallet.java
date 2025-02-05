@@ -10,12 +10,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "wallet")
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 @EqualsAndHashCode
 public class Wallet {
 
