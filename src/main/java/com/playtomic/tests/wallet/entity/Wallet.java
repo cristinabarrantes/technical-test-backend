@@ -8,21 +8,29 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "wallet")
 @NoArgsConstructor
-@AllArgsConstructor
 @Getter
+@Setter
 public class Wallet {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	Integer id;
 
-    @Column(precision = 8, scale = 2)
-    private BigDecimal balance;
+	@Column(precision = 8, scale = 2)
+	private BigDecimal balance;
+
+	@Version
+	private Integer version;
+
+	public Wallet(BigDecimal balance) {
+		this.balance = balance;
+	}
 }

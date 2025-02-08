@@ -3,7 +3,6 @@ package com.playtomic.tests.wallet.service;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.boot.web.client.RestTemplateBuilder;
 
 import java.math.BigDecimal;
@@ -23,6 +22,7 @@ public class StripeServiceIT {
 
   @Test
   public void test_ok() throws StripeServiceException {
-      s.charge("4242 4242 4242 4242", new BigDecimal(15));
+      Payment payment = s.charge("4242 4242 4242 4242", new BigDecimal(15));
+      Assertions.assertNotNull(payment);
   }
 }
