@@ -5,14 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import com.playtomic.tests.wallet.service.StripeAmountTooSmallException;
 
@@ -44,17 +43,7 @@ public class APIExceptionHandler {
 		return ResponseEntity.badRequest().body(errorDetails(errors));
 	}
 
-	@ExceptionHandler(HandlerMethodValidationException.class)
-	public ResponseEntity<Map<String,String>> handleMethodValidationExceptions(HandlerMethodValidationException e) {
-		List<String> errors = e.getAllValidationResults()
-			.stream()
-			.flatMap(validationResult -> validationResult.getResolvableErrors().stream())
-			.map(error -> errorMsg(error))
-			.toList();
-		return ResponseEntity.badRequest().body(errorDetails(errors));
-	}
-
-	private String errorMsg(MessageSourceResolvable error) {
+	private String errorMsg(ObjectError error) {
 		return (error instanceof FieldError fieldError) ? fieldErrorMsg(fieldError) : error.getDefaultMessage();
 	}
 

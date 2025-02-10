@@ -42,7 +42,7 @@ public class WalletService {
 	@Transactional
 	public BigDecimal topUpMoney(@NonNull Integer walletId, @NonNull String creditCardNumber, @NonNull BigDecimal amount) {
 		checkAndThrow(walletId, amount);
-		log.info("Charging {} to the wallet with id {} using a credit card", amount, walletId);
+		log.info("Charging amount {} to the wallet with id {} using a credit card", amount, walletId);
 		Payment payment;
 		try {
 			payment = stripeService.charge(creditCardNumber, amount);

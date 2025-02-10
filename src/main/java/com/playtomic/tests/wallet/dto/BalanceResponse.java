@@ -17,5 +17,4 @@ public class BalanceResponse {
 
 	@NonNull
 	private BigDecimal balance;
-
 }

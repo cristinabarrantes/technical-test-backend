@@ -43,7 +43,7 @@ public class WalletController {
 	@PostMapping("/wallet/{walletId:\\d+}/top-up")
 	public ResponseEntity<BalanceResponse> topUpMoney(@PathVariable Integer walletId, @RequestBody @Valid TopUpRequest topUpRequest) {
 		BigDecimal amount = topUpRequest.getAmount();
-		log.info("Topping up money ({}) for wallet with id {}", amount, walletId);
+		log.info("Topping up money (amount {}) for wallet with id {}", amount, walletId);
 		BigDecimal finalAmount = walletService.topUpMoney(walletId, topUpRequest.getCreditCardNumber(), amount);
 		return ResponseEntity.ok(new BalanceResponse(walletId, finalAmount));
 	}
