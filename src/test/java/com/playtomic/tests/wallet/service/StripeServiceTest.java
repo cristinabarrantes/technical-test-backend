@@ -44,7 +44,7 @@ public class StripeServiceTest {
 
 	@Test
 	void test_ok() throws StripeServiceException {
-		tring paymentId = "12345";
+		String paymentId = "12345";
 		when(s.charge(anyString(), any(BigDecimal.class)))
 			.thenReturn(new Payment(paymentId));
 		Payment payment = s.charge("4242 4242 4242 4242", new BigDecimal(15));

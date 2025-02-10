@@ -2,6 +2,7 @@ package com.playtomic.tests.wallet.api;
 
 import java.math.BigDecimal;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,9 +40,14 @@ public class WalletControllerIT {
 		walletRepository.save(WALLET);
 	}
 
+	@AfterEach
+	void tearDown() {
+		walletRepository.delete(WALLET);
+	}
+
 	@Test
 	void test_wallet_ok() {
-		ResponseEntity<Wallet> response = restTemplate.getForEntity("/wallet/" + WALLET.getId(), Wallet.class);
+		ResponseEntity<Wallet> response = restTemplate.getForEntity("/wallet/" + getId(), Wallet.class);
 		Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
 		Assertions.assertEquals(0, WALLET.getBalance().compareTo(response.getBody().getBalance()));
 	}
@@ -49,9 +55,13 @@ public class WalletControllerIT {
 	@Test
 	void test_topUp_ok() {
 		BigDecimal amount = new BigDecimal("50");
-		TopUpRequest request = new TopUpRequest(WALLET.getId(), "1234 1234 1234 1234", amount);
-		ResponseEntity<BalanceResponse> response = restTemplate.postForEntity("/wallet/top-up", request, BalanceResponse.class);
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", amount);
+		ResponseEntity<BalanceResponse> response = restTemplate.postForEntity("/wallet/" + getId() + "/top-up", request, BalanceResponse.class);
 		Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
 		Assertions.assertEquals(0, WALLET.getBalance().add(amount).compareTo(response.getBody().getBalance()));
+	}
+
+	private Integer getId() {
+		return walletRepository.findAll().iterator().next().getId();
 	}
 }

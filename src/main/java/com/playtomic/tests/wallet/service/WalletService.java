@@ -46,9 +46,9 @@ public class WalletService {
 		Payment payment;
 		try {
 			payment = stripeService.charge(creditCardNumber, amount);
-			log.info("Amount charged using stripe for wallet with id {}", walletId);
+			log.info("Amount charged using Stripe for wallet with id {}", walletId);
 		} catch (StripeServiceException e) {
-			log.error("Problems executing a charge in Stripe");
+			log.error("Problems executing a charge in Stripe for wallet with id {}", walletId);
 			throw e;
 		}
 		BigDecimal newBalance;
@@ -59,6 +59,7 @@ public class WalletService {
 			refund(walletId, payment.getId(), MAX_REFUND_ATTEMPTS);
 			throw new IllegalStateException("It is not possible to increase the balance of the wallet");
 		}
+		log.info("Final balance for wallet with id {}: {}", walletId, newBalance);
 		return newBalance;
 	}
 

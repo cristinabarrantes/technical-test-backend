@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -69,11 +70,12 @@ public class WalletControllerTest {
 
 	@Test
 	void test_topUpMoney_ok() throws Exception {
-		TopUpRequest request = new TopUpRequest(1, "1234 1234 1234 1234", new BigDecimal("50"));
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("50"));
 		BigDecimal finalAmount = new BigDecimal("50");
-		when(walletService.topUpMoney(request.getWalletId(), request.getCreditCardNumber(), request.getAmount()))
+		Integer walletId = 1;
+		when(walletService.topUpMoney(walletId, request.getCreditCardNumber(), request.getAmount()))
 			.thenReturn(finalAmount);
-		mockMvc.perform(post("/wallet/top-up")
+		mockMvc.perform(post("/wallet/" + walletId + "/top-up")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().isOk())
@@ -82,45 +84,68 @@ public class WalletControllerTest {
 
 	@Test
 	void test_topUpMoney_noBody_exception() throws Exception {
-		mockMvc.perform(post("/wallet/top-up"))
-			.andExpect(status().is4xxClientError());
+		mockMvc.perform(post("/wallet/1/top-up"))
+			.andExpect(status().isBadRequest());
 	}
 
+	/************************/
+	/* Errors in validators */
+	/************************/
 	@Test
 	void test_topUpMoney_negativeBalance_exception() throws Exception {
-		TopUpRequest request = new TopUpRequest(1, "1234 1234 1234 1234", new BigDecimal("-50"));
-		when(walletService.topUpMoney(anyInt(), anyString(), argThat(
-				amount -> amount.compareTo(BigDecimal.ZERO) <= 0)))
-			.thenThrow(new StripeAmountTooSmallException());
-		mockMvc.perform(post("/wallet/top-up")
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("-50"));
+		mockMvc.perform(post("/wallet/1/top-up")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().is4xxClientError())
+			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value("Value for amount must be greater than 0"));
 	}
 
 	@Test
+	void test_topUpMoney_chargeAmountTooBig_exception() throws Exception {
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("1000000"));
+		mockMvc.perform(post("/wallet/1/top-up")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.message").value("Value for amount must be less than or equal to 999999.99"));
+	}
+	@Test
+	void test_topUpMoney_chargeMoreDecimalsThanAllowed_exception() throws Exception {
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("12.3456"));
+		mockMvc.perform(post("/wallet/1/top-up")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.message").value("Value for amount must have at maximum 2 decimals"));
+	}
+
+	/***********************************/
+	/* Simulates exceptions in service */
+	/***********************************/
+	@Test
 	void test_topUpMoney_chargeAmountTooSmall_exception() throws Exception {
-		TopUpRequest request = new TopUpRequest(1, "1234 1234 1234 1234", new BigDecimal("1"));
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("1"));
 		when(walletService.topUpMoney(anyInt(), anyString(), argThat(
 				amount -> amount.compareTo(new BigDecimal(10)) < 0 && amount.compareTo(BigDecimal.ZERO) > 0)))
 			.thenThrow(new StripeAmountTooSmallException());
-		mockMvc.perform(post("/wallet/top-up")
+		mockMvc.perform(post("/wallet/1/top-up")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().is4xxClientError())
+			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value("Amount too small"));
 	}
 
 	@Test
-	void test_topUpMoney_chargeAmountTooBig_exception() throws Exception {
-		TopUpRequest request = new TopUpRequest(1, "1234 1234 1234 1234", new BigDecimal("999990"));
+	void test_topUpMoney_chargeSumTooBig_exception() throws Exception {
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("999999.99"));
 		String msg = "It is not possible to increase the balance of the wallet";
-		// Checks the max value subtracting 10 that is the minimum
+		// The value is allowed because it is the maximum but the test assumes than the balance is > 0
+		// so the sum is greater than the value allowed
 		when(walletService.topUpMoney(anyInt(), anyString(), argThat(
-				amount -> amount.compareTo(new BigDecimal(999989)) > 0)))
+				amount -> amount.compareTo(new BigDecimal("999999.99")) == 0)))
 			.thenThrow(new IllegalStateException(msg));
-		mockMvc.perform(post("/wallet/top-up")
+		mockMvc.perform(post("/wallet/1/top-up")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(request)))
 			.andExpect(status().is4xxClientError())

@@ -14,14 +14,14 @@ public class StripeServiceIT {
   StripeService s = new StripeService(testUri, testUri, new RestTemplateBuilder());
 
   @Test
-  public void test_exception() {
+  void test_exception() {
       Assertions.assertThrows(StripeAmountTooSmallException.class, () -> {
           s.charge("4242 4242 4242 4242", new BigDecimal(5));
       });
   }
 
   @Test
-  public void test_ok() throws StripeServiceException {
+  void test_ok() throws StripeServiceException {
       Payment payment = s.charge("4242 4242 4242 4242", new BigDecimal(15));
       Assertions.assertNotNull(payment);
   }
