@@ -22,6 +22,9 @@ public class WalletRepositoryIT {
 		walletRepository.save(w);
 		Optional<Wallet> ow = walletRepository.findById(w.getId());
 		Assertions.assertTrue(ow.isPresent());
-		Assertions.assertEquals(0, w.getBalance().compareTo(ow.get().getBalance()));
+		Wallet wSaved = ow.get();
+		Assertions.assertEquals(0, w.getBalance().compareTo(wSaved.getBalance()));
+		BigDecimal expected = walletRepository.getBalanceById(w.getId());
+		Assertions.assertEquals(0, expected.compareTo(wSaved.getBalance()));
 	}
 }

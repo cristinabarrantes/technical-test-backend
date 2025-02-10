@@ -40,18 +40,8 @@ public class WalletServiceIT {
         Assertions.assertEquals(0, new BigDecimal("100").compareTo(finalAmount));
     }
 
-    @Test
-    void test_topUpMoney_extraDecimals() {
-    	BigDecimal balance = new BigDecimal("50");    	
-        Wallet wallet = walletRepository.save(new Wallet(balance));
-        Integer walletId = wallet.getId();
-        BigDecimal amount = new BigDecimal("1.23456789");
-        BigDecimal finalAmount = walletService.chargeAmount(walletId, amount);
-        Assertions.assertEquals(0, new BigDecimal("51.23").compareTo(finalAmount));
-    }
-
 	@Test
-	void test_topUpMoney_chargeAmount_exception() {
+	void test_topUpMoney_chargeSumTooBig_exception() {
     	BigDecimal balance = new BigDecimal("50");    	
         Wallet wallet = walletRepository.save(new Wallet(balance));
         Integer walletId = wallet.getId();

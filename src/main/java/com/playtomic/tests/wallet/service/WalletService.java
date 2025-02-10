@@ -76,17 +76,17 @@ public class WalletService {
 
 	protected boolean refund(Integer walletId, String paymentId, int maxAttempts) {
 		boolean success = false;
-		int attempts = 1;
+		int attempts = 0;
 		int baseDelay = 10;
 		do {
 			try {
 				stripeService.refund(paymentId);
 				success = true;
-				log.info("Amount refunded for wallet with id {} due to the previous error", walletId);
+				log.info("Amount refunded for wallet with id {} due to a previous error", walletId);
 			} catch (StripeServiceException e) {
 				log.error("Problems in the attempt {} to refund payment with id {}", attempts, paymentId);
-				int delay = baseDelay * (1 << (attempts - 1));
 				attempts++;
+				int delay = baseDelay * (1 << (attempts - 1));
 				LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(delay));
 			}
 		} while (!success && attempts <= maxAttempts);

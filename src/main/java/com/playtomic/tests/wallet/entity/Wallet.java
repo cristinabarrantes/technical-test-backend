@@ -27,6 +27,8 @@ public class Wallet {
 	@Column(precision = 8, scale = 2)
 	private BigDecimal balance;
 
+	// Adding extra field version to manage concurrent updates using optimistic locking mechanism
+	// (vs pessimistic locking) due to performance requirements
 	@Version
 	private Integer version;
 
