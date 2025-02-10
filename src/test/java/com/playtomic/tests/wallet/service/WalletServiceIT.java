@@ -28,108 +28,105 @@ public class WalletServiceIT {
 	@Autowired
 	private WalletService walletService;
 
-    @MockBean
-    private StripeService stripeService;
+	@MockBean
+	private StripeService stripeService;
    
-    @Test
-    void test_topUpMoney_ok() {
-    	BigDecimal balance = new BigDecimal("50");    	
-        Wallet wallet = walletRepository.save(new Wallet(balance));
-        Integer walletId = wallet.getId();
-        BigDecimal finalAmount = walletService.chargeAmount(walletId, balance);
-        Assertions.assertEquals(0, new BigDecimal("100").compareTo(finalAmount));
-    }
+	@Test
+	void test_topUpMoney_ok() {
+		BigDecimal balance = new BigDecimal(50);
+		Wallet wallet = walletRepository.save(new Wallet(balance));
+		Integer walletId = wallet.getId();
+		BigDecimal finalAmount = walletService.chargeAmount(walletId, balance);
+		Assertions.assertEquals(0, new BigDecimal(100).compareTo(finalAmount));
+	}
 
 	@Test
 	void test_topUpMoney_chargeSumTooBig_exception() {
-    	BigDecimal balance = new BigDecimal("50");    	
-        Wallet wallet = walletRepository.save(new Wallet(balance));
-        Integer walletId = wallet.getId();
-        when(stripeService.charge(anyString(), any(BigDecimal.class)))
-        	.thenReturn(new Payment("12345"));
-        Assertions.assertThrows(IllegalStateException.class,
-			() -> walletService.topUpMoney(walletId, "1234 1234 1234 1234", new BigDecimal("999999")));
+		BigDecimal balance = new BigDecimal(50);
+		Wallet wallet = walletRepository.save(new Wallet(balance));
+		Integer walletId = wallet.getId();
+		when(stripeService.charge(anyString(), any(BigDecimal.class)))
+			.thenReturn(new Payment("12345"));
+		Assertions.assertThrows(IllegalStateException.class,
+			() -> walletService.topUpMoney(walletId, "1234 1234 1234 1234", new BigDecimal(999999)));
 	}
 
-    @Test
-    void test_topUpMoney_chargeInStripe_exception() {
-    	BigDecimal balance = new BigDecimal("50");
-    	Wallet wallet = walletRepository.save(new Wallet(balance));
+	@Test
+	void test_topUpMoney_chargeInStripe_exception() {
+		BigDecimal balance = new BigDecimal(50);
+		Wallet wallet = walletRepository.save(new Wallet(balance));
+		when(stripeService.charge(anyString(), any(BigDecimal.class)))
+			.thenThrow(new StripeServiceException());
+		Assertions.assertThrows(StripeServiceException.class,
+			() -> walletService.topUpMoney(wallet.getId(), "1234 1234 1234 1234", new BigDecimal(10)));
+	}
 
-    	when(stripeService.charge(anyString(), any(BigDecimal.class)))
-    		.thenThrow(new StripeServiceException());
+	@Test
+	void test_chargeAmount_ok() throws InterruptedException {
+		BigDecimal balance = new BigDecimal(50);
+		Wallet wallet = walletRepository.save(new Wallet(balance));
+		Integer walletId = wallet.getId();
+		Integer version = wallet.getVersion();
 
-    	Assertions.assertThrows(StripeServiceException.class,
-			() -> walletService.topUpMoney(wallet.getId(), "1234 1234 1234 1234", new BigDecimal("10")));
-    }
+		BigDecimal incOne = new BigDecimal(100);
+		BigDecimal incTwo = new BigDecimal(200);
+		chargeAmount(walletId, balance, incOne, incTwo, 2);
 
-    @Test
-    void test_chargeAmount_ok() throws InterruptedException {
-    	BigDecimal balance = new BigDecimal("50");    	
-        Wallet wallet = walletRepository.save(new Wallet(balance));
-        Integer walletId = wallet.getId();
-        Integer version = wallet.getVersion();
+		wallet = walletRepository.findById(walletId).get();
+		Assertions.assertEquals(0, new BigDecimal(350).compareTo(wallet.getBalance()));
+		Assertions.assertEquals(version + 2, wallet.getVersion());
+		walletRepository.deleteById(walletId);
+	}
 
-        BigDecimal incOne = new BigDecimal("100");
-    	BigDecimal incTwo = new BigDecimal("200");
-    	
-    	chargeAmount(walletId, balance, incOne, incTwo, 2);
+	@Test
+	void test_chargeAmount_concurrentUpdates_exception() throws InterruptedException {
+		BigDecimal balance = new BigDecimal(50);
+		Wallet wallet = walletRepository.save(new Wallet(balance));
+		Integer walletId = wallet.getId();
+		Integer version = wallet.getVersion();
 
-    	wallet = walletRepository.findById(walletId).get();
-        Assertions.assertEquals(0, new BigDecimal("350").compareTo(wallet.getBalance()));
-        Assertions.assertEquals(version + 2, wallet.getVersion());
-        walletRepository.deleteById(walletId);
-    }
+		BigDecimal incOne = new BigDecimal(100);
+		BigDecimal incTwo = new BigDecimal(200);
+		chargeAmount(walletId, balance, incOne, incTwo, 1);
 
-    @Test
-    void test_chargeAmount_concurrentUpdates_exception() throws InterruptedException {
-    	BigDecimal balance = new BigDecimal("50");
-        Wallet wallet = walletRepository.save(new Wallet(balance));
-        Integer walletId = wallet.getId();
-        Integer version = wallet.getVersion();
+		wallet = walletRepository.findById(walletId).get();
+		Assertions.assertEquals(-1, wallet.getBalance().compareTo(new BigDecimal(350)));
+		Assertions.assertEquals(version + 1, wallet.getVersion());
+		walletRepository.deleteById(walletId);
+	}
 
-        BigDecimal incOne = new BigDecimal("100");
-    	BigDecimal incTwo = new BigDecimal("200");
-    	chargeAmount(walletId, balance, incOne, incTwo, 1);
+	private void chargeAmount(Integer walletId, BigDecimal balance, BigDecimal incOne, BigDecimal incTwo, int maxAttempts) throws InterruptedException {
+		CountDownLatch latch = new CountDownLatch(2);
 
-    	wallet = walletRepository.findById(walletId).get();
-        Assertions.assertEquals(-1, wallet.getBalance().compareTo(new BigDecimal("350")));
-        Assertions.assertEquals(version + 1, wallet.getVersion());
-        walletRepository.deleteById(walletId);
-    }
-
-    private void chargeAmount(Integer walletId, BigDecimal balance, BigDecimal incOne, BigDecimal incTwo, int maxAttempts) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
-
-    	Thread thread1 = new Thread(() -> {
-            try {
-        		latch.await();
-                walletService.chargeAmount(walletId, incOne, maxAttempts);
-            } catch (ConcurrentModificationException e) {
-                System.out.println("Thread 1 - Optimistic lock exception.");
-            } catch (InterruptedException e) {
-            	System.out.println("Problems with thread 1: " + e.getMessage());
+		Thread thread1 = new Thread(() -> {
+			try {
+				latch.await();
+				walletService.chargeAmount(walletId, incOne, maxAttempts);
+			} catch (ConcurrentModificationException e) {
+				System.out.println("Thread 1 - Optimistic lock exception.");
+			} catch (InterruptedException e) {
+				System.out.println("Problems with thread 1: " + e.getMessage());
 			}
-        });
+		});
 
-        Thread thread2 = new Thread(() -> {
-            try {
-            	latch.await();
-                walletService.chargeAmount(walletId, incTwo, maxAttempts);
-            } catch (ConcurrentModificationException e) {
-                System.out.println("Thread 2 - Optimistic lock exception.");
-            } catch (InterruptedException e) {
-            	System.out.println("Problems with thread 2: " + e.getMessage());
-            }
-        });
+		Thread thread2 = new Thread(() -> {
+			try {
+				latch.await();
+				walletService.chargeAmount(walletId, incTwo, maxAttempts);
+			} catch (ConcurrentModificationException e) {
+				System.out.println("Thread 2 - Optimistic lock exception.");
+			} catch (InterruptedException e) {
+				System.out.println("Problems with thread 2: " + e.getMessage());
+			}
+		});
 
-        thread1.start();
-        thread2.start();
+		thread1.start();
+		thread2.start();
 
-        latch.countDown();
-        latch.countDown();
+		latch.countDown();
+		latch.countDown();
 
-        thread1.join();
-        thread2.join();
-    }
+		thread1.join();
+		thread2.join();
+	}
 }

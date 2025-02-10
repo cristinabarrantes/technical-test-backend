@@ -33,7 +33,7 @@ public class WalletServiceTest {
 
 	@Test
 	void test_getWallet_ok() {
-		BigDecimal balance = new BigDecimal("20");
+		BigDecimal balance = new BigDecimal(20);
 		Wallet wallet = new Wallet(balance);
 		Integer walletId = 1;
 		doReturn(Optional.of(wallet)).when(walletRepository).findById(walletId);
@@ -54,12 +54,12 @@ public class WalletServiceTest {
 
 	@Test
 	void test_topUpMoney_ok() {
-		BigDecimal balance = new BigDecimal("20");
+		BigDecimal balance = new BigDecimal(20);
 		Wallet wallet = new Wallet(balance);
 		Integer walletId = 1;
 		doReturn(Optional.of(wallet)).when(walletRepository).findById(walletId);
 
-		BigDecimal amount = new BigDecimal("50");
+		BigDecimal amount = new BigDecimal(50);
 		BigDecimal expected = balance.add(amount);
 		doReturn(expected).when(walletRepository).getBalanceById(walletId);
 
@@ -70,15 +70,15 @@ public class WalletServiceTest {
 	@Test
 	void test_topUpMoney_noWalletForId_exception() {
 		Assertions.assertThrows(NoSuchElementException.class,
-			() -> walletService.topUpMoney(111, "1234 1234 1234 1234", new BigDecimal("10")));
+			() -> walletService.topUpMoney(111, "1234 1234 1234 1234", new BigDecimal(10)));
 	}
 
 	@Test
 	void test_topUpMoney_nullValue_exception() {
 		Assertions.assertThrows(NullPointerException.class,
-			() -> walletService.topUpMoney(null, "1234 1234 1234 1234", new BigDecimal("10")));
+			() -> walletService.topUpMoney(null, "1234 1234 1234 1234", new BigDecimal(10)));
 		Assertions.assertThrows(NullPointerException.class,
-			() -> walletService.topUpMoney(111, null, new BigDecimal("10")));
+			() -> walletService.topUpMoney(111, null, new BigDecimal(10)));
 		Assertions.assertThrows(NullPointerException.class,
 			() -> walletService.topUpMoney(111, "1234 1234 1234 1234", null));
 	}
@@ -86,7 +86,7 @@ public class WalletServiceTest {
 	@Test
 	void test_topUpMoney_negativeBalance_exception() {
 		Assertions.assertThrows(IllegalArgumentException.class,
-			() -> walletService.topUpMoney(1, "1234 1234 1234 1234", new BigDecimal("-10")));
+			() -> walletService.topUpMoney(1, "1234 1234 1234 1234", new BigDecimal(-10)));
 	}
 
 	@Test

@@ -50,7 +50,7 @@ public class WalletControllerTest {
 
 	@Test
 	void test_wallet_ok() throws Exception {
-		Wallet wallet = new Wallet(new BigDecimal("10"));
+		Wallet wallet = new Wallet(new BigDecimal(10));
 		Integer walletId = 1;
 		wallet.setId(walletId);
 		when(walletService.getWallet(walletId)).thenReturn(wallet);
@@ -70,8 +70,8 @@ public class WalletControllerTest {
 
 	@Test
 	void test_topUpMoney_ok() throws Exception {
-		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("50"));
-		BigDecimal finalAmount = new BigDecimal("50");
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal(50));
+		BigDecimal finalAmount = new BigDecimal(50);
 		Integer walletId = 1;
 		when(walletService.topUpMoney(walletId, request.getCreditCardNumber(), request.getAmount()))
 			.thenReturn(finalAmount);
@@ -93,7 +93,7 @@ public class WalletControllerTest {
 	/************************/
 	@Test
 	void test_topUpMoney_negativeBalance_exception() throws Exception {
-		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("-50"));
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal(-50));
 		mockMvc.perform(post("/wallet/1/top-up")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(request)))
@@ -103,7 +103,7 @@ public class WalletControllerTest {
 
 	@Test
 	void test_topUpMoney_chargeAmountTooBig_exception() throws Exception {
-		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("1000000"));
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal(1000000));
 		mockMvc.perform(post("/wallet/1/top-up")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content(objectMapper.writeValueAsString(request)))
@@ -125,7 +125,7 @@ public class WalletControllerTest {
 	/***********************************/
 	@Test
 	void test_topUpMoney_chargeAmountTooSmall_exception() throws Exception {
-		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal("1"));
+		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", new BigDecimal(1));
 		when(walletService.topUpMoney(anyInt(), anyString(), argThat(
 				amount -> amount.compareTo(new BigDecimal(10)) < 0 && amount.compareTo(BigDecimal.ZERO) > 0)))
 			.thenThrow(new StripeAmountTooSmallException());

@@ -33,7 +33,7 @@ public class WalletControllerIT {
 	@MockBean
 	private StripeService stripeService;
 
-	private static final Wallet WALLET = new Wallet(new BigDecimal("20"));
+	private static final Wallet WALLET = new Wallet(new BigDecimal(20));
 
 	@BeforeEach
 	void setUp() {
@@ -54,7 +54,7 @@ public class WalletControllerIT {
 
 	@Test
 	void test_topUp_ok() {
-		BigDecimal amount = new BigDecimal("50");
+		BigDecimal amount = new BigDecimal(50);
 		TopUpRequest request = new TopUpRequest("1234 1234 1234 1234", amount);
 		ResponseEntity<BalanceResponse> response = restTemplate.postForEntity("/wallet/" + getId() + "/top-up", request, BalanceResponse.class);
 		Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());

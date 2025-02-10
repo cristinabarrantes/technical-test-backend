@@ -18,7 +18,7 @@ public class WalletRepositoryIT {
 
 	@Test
 	void test_ok() {
-		Wallet w = new Wallet(new BigDecimal("100"));
+		Wallet w = new Wallet(new BigDecimal(100));
 		walletRepository.save(w);
 		Optional<Wallet> ow = walletRepository.findById(w.getId());
 		Assertions.assertTrue(ow.isPresent());
